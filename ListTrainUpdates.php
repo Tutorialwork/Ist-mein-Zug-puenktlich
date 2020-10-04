@@ -38,10 +38,15 @@ class ListTrainUpdates{
             foreach ($trainList as $train){
                 $trainHumanId = $train->getTrainType() . $train->getTrainNumber();
                 if($watchedTrain->train == $trainHumanId){
-                    //Found train
-                    $trainId = $train->getTrainId();
-                    array_push($this->trainIds, $trainId);
-                    array_push($this->trainListItems, new TrainListItem($watchedTrain->train, $watchedTrain->time));
+                    $currentHour = (int) date("H");
+                    $nextHour = $currentHour + 1;
+                    $trainDeparture = explode(":", $watchedTrain->time)[0];
+                    if($currentHour == $trainDeparture || $nextHour == $trainDeparture){
+                        //Found train
+                        $trainId = $train->getTrainId();
+                        array_push($this->trainIds, $trainId);
+                        array_push($this->trainListItems, new TrainListItem($watchedTrain->train, $watchedTrain->time));
+                    }
                 }
             }
         }
@@ -84,6 +89,10 @@ class ListTrainUpdates{
                 $speechText .= "Dein Zug um ". $this->trainListItems[$index]->getPlannedDeparture() . " kommt heute pünktlich. ";
             }
             $index++;
+        }
+
+        if(strlen($speechText) == 0){
+            $speechText = "Es wurde kein Zug auf deiner Liste gefunden der in den nächsten 2 Stunden abfährt";
         }
 
         return $speechText;
