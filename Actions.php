@@ -1,9 +1,10 @@
 <?php
 
-require "ResponseBuilder.php";
-require "ListStations.php";
-require "ListTrains.php";
-require "Database.php";
+require_once "ResponseBuilder.php";
+require_once "ListTrainUpdates.php";
+require_once "ListStations.php";
+require_once "ListTrains.php";
+require_once "Database.php";
 
 class Actions{
 
@@ -106,7 +107,13 @@ class Actions{
 
                 break;
             default:
-                $builder->speechCard("default", "title", "mes", null);
+                $stmt = $database->getMysql()->prepare("SELECT * FROM istmeinzugpuenktlich WHERE userId = ?");
+                $stmt->execute([$this->userId]);
+                $row = $stmt->fetch();
+
+                $listTrainChanges = new ListTrainUpdates($row["stationId"], $this->userId);
+
+                $builder->speechText($listTrainChanges->requestChanges());
                 $this->response = $builder->getResponse();
                 break;
         }
