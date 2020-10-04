@@ -71,7 +71,9 @@ class ListTrainUpdates{
                         $newDeparture = substr($newDeparture, 6, strlen($newDeparture));
                         $newDeparture = substr($newDeparture, 0, 2) . ":" . substr($newDeparture, 2, 4);
                         if($newDeparture != $this->trainListItems[$index]->getPlannedDeparture()){ //Ignore delay fewer as 60 seconds
-                            $speechText .= $this->splitHumanTrainId($this->trainListItems[$index]->getHumanTrainId()) . " kommt heute " . $newDeparture . " statt " . $this->trainListItems[$index]->getPlannedDeparture() . " ";
+                            $delay = $this->calculateDelay($this->trainListItems[$index]->getPlannedDeparture(), $newDeparture);
+                            $delayUnit = ($delay == 1) ? "Minute" : "Minuten";
+                            $speechText .= "Dein Zug um ". $this->trainListItems[$index]->getPlannedDeparture() . " kommt heute " . $delay . " " . $delayUnit . " später. ";
                             $foundChanges = true;
                         }
                     } // else other change for example other station ...
@@ -79,7 +81,7 @@ class ListTrainUpdates{
             }
 
             if(!$foundChanges){
-                $speechText .= $this->splitHumanTrainId($this->trainListItems[$index]->getHumanTrainId()) . " kommt heute planmäßig um ". $this->trainListItems[$index]->getPlannedDeparture() . " ";
+                $speechText .= "Dein Zug um ". $this->trainListItems[$index]->getPlannedDeparture() . " kommt heute pünktlich. ";
             }
             $index++;
         }
@@ -97,6 +99,22 @@ class ListTrainUpdates{
         $trainType2 = substr($toSplit, 1, 1);
         $trainNumber = substr($toSplit, 2, strlen($toSplit) - 2);
         return $trainType1 . " " . $trainType2 . " " . $trainNumber;
+    }
+
+    /**
+     * Calculate train delay in minutes
+     */
+    public function calculateDelay($plannedDeparture, $newDeparture){
+        try{
+            $plannedDeparture = new DateTime($plannedDeparture);
+            $newDeparture = new DateTime($newDeparture);
+
+            $delay = $plannedDeparture->diff($newDeparture);
+            return (int) $delay->format("%i");
+        } catch (Exception $e){
+            error_log("Error by calculateDelay(): " . $e->getMessage());
+            return 0;
+        }
     }
 
 }
