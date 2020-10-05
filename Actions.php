@@ -51,6 +51,41 @@ class Actions{
                             "Wann fährt dein Zug normalerweiße?",
                             null);
                             break;
+                        case "listTrains":
+                            $hour = $this->sessionData["hour"];
+                            $requestDate = date("ymd");
+                            if($hour < date("H")){
+                                $requestDate = date("ymd", strtotime('+1 day'));
+                            }
+
+                            $stmt = $database->getMysql()->prepare("SELECT * FROM istmeinzugpuenktlich WHERE userId = ?");
+                            $stmt->execute([$this->userId]);
+
+                            $row = $stmt->fetch();
+
+                            $list = new ListTrains($row["stationId"], $requestDate, $hour);
+
+                            $departureList = [];
+                            foreach ($list->getTrains() as $train){
+                                if($train->getDeparture() != "Endstation"){
+                                    array_push($departureList, strtotime($train->getDeparture()));
+                                }
+                            }
+                            sort($departureList);
+
+                            $out = "";
+                            foreach ($departureList as $train) {
+                                $out .= date("H:i", $train) . ", ";
+                            }
+
+                            if(substr($hour, 0, 1) == "0"){
+                                //Remove leading 0
+                                $hour = substr($hour, 1, 2);
+                            }
+                            $builder->speechTextAndReprompt("Folgende Züge habe ich um " . $hour . " Uhr gefunden: " . $out . ". Möchtest du einen Zug zur Liste hinzufügen?",
+                            "Möchtest du nochmal versuchen einen Zug zur Liste hinzuzufügen?",
+                            ["intent" => "addTrain"]);
+                            break;
                         default:
                             /**
                              * Unexpected behavior
@@ -74,8 +109,16 @@ class Actions{
                 $station = new ListStations($this->slots["station"]["value"]);
 
                 if($station->getStation() != null){
-                    $stmt = $database->getMysql()->prepare("INSERT INTO istmeinzugpuenktlich (userId, stationId) VALUES (?, ?)");
-                    $stmt->execute([$this->userId, $station->getStation()->getId()]);
+                    $userStmt = $database->getMysql()->prepare("SELECT * FROM istmeinzugpuenktlich WHERE userId = ?");
+                    $userStmt->execute([$this->userId]);
+                    if($userStmt->rowCount() == 0){
+                        $stmt = $database->getMysql()->prepare("INSERT INTO istmeinzugpuenktlich (userId, stationId) VALUES (?, ?)");
+                        $stmt->execute([$this->userId, $station->getStation()->getId()]);
+                    } else {
+                        $stmt = $database->getMysql()->prepare("UPDATE istmeinzugpuenktlich SET stationId = ? WHERE userId = ?");
+                        $stmt->execute([$station->getStation()->getId(), $this->userId]);
+                    }
+
 
                     $builder->speechText($station->getStation()->getName() . " ist jetzt dein Heimatbahnhof.");
                 } else {
@@ -127,10 +170,20 @@ class Actions{
                     }
 
                     //if this reached = train 404
-                    $builder->speechText("Ich habe kein Zug um diese Zeit gefunden.");
+                    $hour = $timeSplit[0];
+                    if(substr($hour, 0, 1) == "0"){
+                        //Remove leading 0
+                        $hour = substr($hour, 1, 2);
+                    }
+                    $builder->speechTextAndReprompt("Ich habe kein Zug um diese Zeit gefunden. Willst du wissen welche Züge um " . $hour . " Uhr fahren?",
+                    "Soll ich dir alle Züge nennen die um " . $hour . " Uhr fahren?",
+                        ["intent" => "listTrains", "hour" => $timeSplit[0]]);
                 } else {
                     //home station id missing
-                    $builder->speechText("Setzte zuerst dein Heimatbahnhof");
+                    $builder->speechTextAndReprompt("Ich habe deinen Heimatbahnhof noch nicht gespeichert. Möchtest du mir verraten was dein Heimatbahnhof ist?",
+                        "Was ist dein Heimatbahnhof?",
+                        []
+                    );
                 }
 
                 $this->response = $builder->getResponse();
