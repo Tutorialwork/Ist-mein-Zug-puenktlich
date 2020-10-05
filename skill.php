@@ -23,9 +23,10 @@ $intent = !empty($request["request"]["intent"]["name"]) ? $request["request"]["i
 $type = $request["request"]["type"];
 $requestId = $request["request"]["requestId"];
 $slots = !empty($request["request"]["intent"]["slots"]) ? $request["request"]["intent"]["slots"] : null;
+$sessionDate = $request["session"]["attributes"];
 
 require "Actions.php";
-$action = new Actions($useridShort, $intent, $type, $requestId, $slots);
+$action = new Actions($useridShort, $intent, $type, $requestId, $slots, $sessionDate);
 $action->process();
 
 header('Content-Type: application/json');

@@ -17,6 +17,7 @@ class Actions{
     private $requestId;
     private $response;
     private $slots;
+    private $sessionData;
 
     /**
      * Actions constructor.
@@ -25,14 +26,16 @@ class Actions{
      * @param $requestType
      * @param $requestId
      * @param $slots
+     * @param $sessionData
      */
-    public function __construct($userId, $intent, $requestType, $requestId, $slots)
+    public function __construct($userId, $intent, $requestType, $requestId, $slots, $sessionData)
     {
         $this->userId = $userId;
         $this->intent = $intent;
         $this->requestType = $requestType;
         $this->requestId = $requestId;
         $this->slots = $slots;
+        $this->sessionData = $sessionData;
     }
 
     public function process(){
@@ -40,8 +43,34 @@ class Actions{
         $database = new Database();
 
         switch ($this->intent){
+            case "AMAZON.YesIntent":
+                if(isset($this->sessionData["intent"])){
+                    switch ($this->sessionData["intent"]){
+                        case "addTrain":
+                            $builder->speechTextAndReprompt("Super! Um wie viel Uhr fährt dein Zug normalerweiße?",
+                            "Wann fährt dein Zug normalerweiße?",
+                            null);
+                            break;
+                        default:
+                            /**
+                             * Unexpected behavior
+                             */
+                            $builder->speechText("Etwas ist schiefgelaufen");
+                            break;
+                    }
+                } else {
+                    /**
+                     * Unexpected behavior
+                     */
+                    $builder->speechText("Etwas ist schiefgelaufen");
+                }
+                $this->response = $builder->getResponse();
+                break;
+            case "AMAZON.NoIntent":
+                $builder->speechText("Okay");
+                $this->response = $builder->getResponse();
+                break;
             case "stationSearch":
-            case "stationInput":
                 $station = new ListStations($this->slots["station"]["value"]);
 
                 if($station->getStation() != null){
@@ -113,9 +142,15 @@ class Actions{
                 $row = $stmt->fetch();
 
                 if($row["stationId"] != null){
-                    $listTrainChanges = new ListTrainUpdates($row["stationId"], $this->userId);
+                    if($row["watchedTrains"] != null){
+                        $listTrainChanges = new ListTrainUpdates($row["stationId"], $this->userId);
 
-                    $builder->speechText($listTrainChanges->requestChanges());
+                        $builder->speechText($listTrainChanges->requestChanges());
+                    } else {
+                        $builder->speechTextAndReprompt("Du hast noch keinen Zug auf deiner Liste. Möchtest du jetzt einen hinzufügen?",
+                            "Möchtest du einen Zug zu deiner Liste hinzufügen?",
+                            ["intent" => "addTrain"]);
+                    }
                 } else {
                     $builder->speechTextAndReprompt("Ich habe deinen Heimatbahnhof noch nicht gespeichert. Möchtest du mir verraten was dein Heimatbahnhof ist?",
                         "Was ist dein Heimatbahnhof?",

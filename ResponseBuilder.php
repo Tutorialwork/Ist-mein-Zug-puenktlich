@@ -20,9 +20,7 @@ class ResponseBuilder{
 
     public function speechTextAndReprompt($text, $promptText, $data){
         $this->response = ["version" => "1.0",
-            "sessionAttributes" => [
-                $data
-            ],
+            "sessionAttributes" => $data,
             "response" => [
                 "outputSpeech" =>  [
                     "type" => "SSML",
