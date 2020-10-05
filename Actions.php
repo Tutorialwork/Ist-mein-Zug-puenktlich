@@ -41,6 +41,7 @@ class Actions{
 
         switch ($this->intent){
             case "stationSearch":
+            case "stationInput":
                 $station = new ListStations($this->slots["station"]["value"]);
 
                 if($station->getStation() != null){
@@ -111,9 +112,17 @@ class Actions{
                 $stmt->execute([$this->userId]);
                 $row = $stmt->fetch();
 
-                $listTrainChanges = new ListTrainUpdates($row["stationId"], $this->userId);
+                if($row["stationId"] != null){
+                    $listTrainChanges = new ListTrainUpdates($row["stationId"], $this->userId);
 
-                $builder->speechText($listTrainChanges->requestChanges());
+                    $builder->speechText($listTrainChanges->requestChanges());
+                } else {
+                    $builder->speechTextAndReprompt("Ich habe deinen Heimatbahnhof noch nicht gespeichert. Möchtest du mir verraten was dein Heimatbahnhof ist?",
+                        "Was ist dein Heimatbahnhof?",
+                        []
+                    );
+                }
+
                 $this->response = $builder->getResponse();
                 break;
         }

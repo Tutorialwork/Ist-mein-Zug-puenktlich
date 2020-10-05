@@ -18,6 +18,29 @@ class ResponseBuilder{
         ];
     }
 
+    public function speechTextAndReprompt($text, $promptText, $data){
+        $this->response = ["version" => "1.0",
+            "sessionAttributes" => [
+                $data
+            ],
+            "response" => [
+                "outputSpeech" =>  [
+                    "type" => "SSML",
+                    "text" => "<speak>".$text."</speak>",
+                    "ssml" => "<speak>".$text."</speak>"
+                ],
+                "shouldEndSession" => false,
+                "reprompt" => [
+                    "outputSpeech" =>  [
+                        "type" => "SSML",
+                        "text" => "<speak>".$promptText."</speak>",
+                        "ssml" => "<speak>".$promptText."</speak>"
+                    ],
+                ],
+            ]
+        ];
+    }
+
     public function speechCard($text, $cardTitle, $cardText, $cardImage){
         $this->response = ["version" => "1.0",
             "response" => [
