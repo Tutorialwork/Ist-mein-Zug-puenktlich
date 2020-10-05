@@ -189,6 +189,34 @@ class Actions{
                 $this->response = $builder->getResponse();
 
                 break;
+            case "deleteTrain":
+                $time = $this->slots["time"]["value"];
+
+                $stmt = $database->getMysql()->prepare("SELECT * FROM istmeinzugpuenktlich WHERE userId = ?");
+                $stmt->execute([$this->userId]);
+
+                $row = $stmt->fetch();
+
+                $watchedTrains = [];
+                if($row["watchedTrains"] != null){
+                    $watchedTrains = json_decode($row["watchedTrains"]);
+                }
+
+                if($this->containsTrain($time, $watchedTrains)){
+                    unset($watchedTrains[$this->getTrainIndex($time, $watchedTrains)]);
+
+                    $watchedTrains = json_encode($watchedTrains, true);
+
+                    $updateStmt = $database->getMysql()->prepare("UPDATE istmeinzugpuenktlich SET watchedTrains = ? WHERE userId = ?");
+                    $updateStmt->execute([$watchedTrains, $this->userId]);
+
+                    $builder->speechText("Der Zug wurde von deiner Liste erfolgreich gelöscht.");
+                } else {
+                    $builder->speechText("Ein Zug um diese Zeit hast du nicht auf deiner Liste.");
+                }
+
+                $this->response = $builder->getResponse();
+                break;
             default:
                 $stmt = $database->getMysql()->prepare("SELECT * FROM istmeinzugpuenktlich WHERE userId = ?");
                 $stmt->execute([$this->userId]);
@@ -231,6 +259,17 @@ class Actions{
             }
         }
         return false;
+    }
+
+    private function getTrainIndex($time, $trainList){
+        $index = 0;
+        foreach ($trainList as $item){
+            if($item->time == $time){
+                return $index;
+            }
+            $index++;
+        }
+        return -1;
     }
 
 }
