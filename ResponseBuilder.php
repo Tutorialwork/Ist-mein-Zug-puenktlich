@@ -61,59 +61,45 @@ class ResponseBuilder{
         ];
     }
 
-    public function speechAPL(){
+    public function speechAPL($text, $data){
         $this->response = ["version" => "1.0",
             "response" => [
                 "outputSpeech" =>  [
                     "type" => "SSML",
-                    "text" => "<speak>sss</speak>",
-                    "ssml" => "<speak>sss</speak>"
+                    "text" => "<speak>" . $text . "</speak>",
+                    "ssml" => "<speak>" . $text . "</speak>"
                 ],
                 "directives" => [
-                    "type" => "Alexa.Presentation.APL.RenderDocument",
-                    "token" => "helloworldToken",
-                    "document" => [
-                        "type" => "APL",
-                        "version" => "1.4",
-                        "description" => "A simple hello world APL document.",
-                        "settings" => [],
-                        "theme" => "dark",
-                        "import" => [],
-                        "resources" => [],
-                        "styles" => [],
-                        "onMount" => [],
-                        "graphics" => [],
-                        "commands" => [],
-                        "layouts" => [],
-                        "mainTemplate" => [
-                            "parameters" => [
-                                "payload"
+                    [
+                        "type" => "Alexa.Presentation.APL.RenderDocument",
+                        "token" => "delayScreen",
+                        "document" => [
+                            "type" => "APL",
+                            "version" => "1.4",
+                            "theme" => "dark",
+                            "import" => [
+                                [
+                                    "name" => "alexa-layouts",
+                                    "version" => "1.2.0"
+                                ]
                             ],
-                            "items" => [
-
-                                    "type" => "Container",
-                                    "width" => "100%",
-                                    "height" => "100%",
-                                    "items" => [
-
-                                            "type" => "Text",
-                                            "width" => "300dp",
-                                            "height" => "32dp",
-                                            "paddingTop" => "12dp",
-                                            "paddingBottom" => "12dp",
-                                            "text" => "Type in the text for your layout...",
-                                            "fontSize" => "20dp",
-                                            "textAlign" => "center",
-                                            "textAlignVertical" => "center",
-                                            "fontWeight" => "400"
-
-                                    ],
-                                    "direction" => "row",
-                                    "alignItems" => "center",
-                                    "justifyContent" => "center"
-
-                            ]
-                        ]
+                            "mainTemplate" => [
+                                "parameters" => [],
+                                "items" => [
+                                    [
+                                        "type" => "AlexaTextList",
+                                        "id" => "cheeseList",
+                                        "headerTitle" => "Ist mein Zug pünktlich?",
+                                        "headerBackButton" => false,
+                                        "headerAttributionImage" => "https://s3.amazonaws.com/CAPS-SSE/echo_developer/627b/349bc539fa6544deb1f7dedaff97c935/APP_ICON?versionId=vLqeklOr7wcE7A_vqRclfjqC7uZobiG5&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20201006T101035Z&X-Amz-SignedHeaders=host&X-Amz-Expires=86400&X-Amz-Credential=AKIAWBV6LQ4QHAYALYJ7%2F20201006%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=011efcad93ae8653ec0d69813950426286d6840532774ca7923f3c2035f620f3",
+                                        "backgroundImageSource" => "https://i.imgur.com/X6Rjzsn.jpeg",
+                                        "backgroundBlur" => false,
+                                        "backgroundColorOverlay" => true,
+                                        "listItems" => $data,
+                                    ]
+                                ]
+                            ],
+                        ],
                     ]
                 ],
                 "shouldEndSession" => true

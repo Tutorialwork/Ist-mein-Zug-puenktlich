@@ -231,7 +231,38 @@ class Actions{
                     if($row["watchedTrains"] != null){
                         $listTrainChanges = new ListTrainUpdates($row["stationId"], $this->userId);
 
-                        $builder->speechText($listTrainChanges->requestChanges());
+                        $uiData = [
+                            [
+                                "primaryText" => "7:15",
+                                "tertiaryText" => "+ 5 Min",
+                                "imageAlignment" => "center",
+                                "imageBlurredBackground" => true,
+                                "imageScale" => "best-fit"
+                            ],
+                            [
+                                "primaryText" => "7:24",
+                                "tertiaryText" => "+ 5 Min",
+                                "imageAlignment" => "center",
+                                "imageBlurredBackground" => true,
+                                "imageScale" => "best-fit"
+                            ],
+                            [
+                                "primaryText" => "13:15",
+                                "tertiaryText" => "+ 5 Min",
+                                "imageAlignment" => "center",
+                                "imageBlurredBackground" => true,
+                                "imageScale" => "best-fit"
+                            ],
+                            [
+                                "primaryText" => "14:15",
+                                "tertiaryText" => "+ 5 Min",
+                                "imageAlignment" => "center",
+                                "imageBlurredBackground" => true,
+                                "imageScale" => "best-fit"
+                            ]
+                        ];
+
+                        $builder->speechAPL($listTrainChanges->requestChanges(), $uiData);
                     } else {
                         $builder->speechTextAndReprompt("Du hast noch keinen Zug auf deiner Liste. Möchtest du jetzt einen hinzufügen?",
                             "Möchtest du einen Zug zu deiner Liste hinzufügen?",
