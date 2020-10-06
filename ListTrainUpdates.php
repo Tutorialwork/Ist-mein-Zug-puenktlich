@@ -15,6 +15,7 @@ class ListTrainUpdates{
     private $userId;
     private $trainIds = [];
     private $trainListItems = [];
+    private $delayList = [];
 
     public function __construct($stationId, $userId){
         $this->stationId = $stationId;
@@ -31,6 +32,7 @@ class ListTrainUpdates{
         $stmt->execute([$this->userId]);
         $row = $stmt->fetch();
         $normalTrainList = json_decode($row["watchedTrains"]);
+        sort($normalTrainList);
         foreach ($normalTrainList as $watchedTrain){
             $timeSplit = explode(":", $watchedTrain->time);
             $list = new ListTrains($this->stationId, date("ymd"), $timeSplit[0]);
@@ -76,17 +78,25 @@ class ListTrainUpdates{
                         $newDeparture = substr($newDeparture, 6, strlen($newDeparture));
                         $newDeparture = substr($newDeparture, 0, 2) . ":" . substr($newDeparture, 2, 4);
                         if($newDeparture != $this->trainListItems[$index]->getPlannedDeparture()){ //Ignore delay fewer as 60 seconds
-                            $delay = $this->calculateDelay($this->trainListItems[$index]->getPlannedDeparture(), $newDeparture);
-                            $delayUnit = ($delay == 1) ? "Minute" : "Minuten";
-                            $speechText .= "Dein Zug um ". $this->trainListItems[$index]->getPlannedDeparture() . " kommt heute " . $delay . " " . $delayUnit . " später. ";
-                            $foundChanges = true;
+                            $newDepartureTimestamp = strtotime($newDeparture);
+                            if($newDepartureTimestamp > time()){
+                                $delay = $this->calculateDelay($this->trainListItems[$index]->getPlannedDeparture(), $newDeparture);
+                                $delayUnit = ($delay == 1) ? "Minute" : "Minuten";
+                                $speechText .= "Dein Zug um ". $this->trainListItems[$index]->getPlannedDeparture() . " kommt heute " . $delay . " " . $delayUnit . " später. ";
+                                $foundChanges = true;
+                                array_push($this->delayList, ["plannedDeparture" => $this->trainListItems[$index]->getPlannedDeparture(), "delay" => $delay]);
+                            }
                         }
                     } // else other change for example other station ...
                 }
             }
 
-            if(!$foundChanges){
-                $speechText .= "Dein Zug um ". $this->trainListItems[$index]->getPlannedDeparture() . " kommt heute pünktlich. ";
+            $departureTimestamp = strtotime($this->trainListItems[$index]->getPlannedDeparture());
+            if($departureTimestamp > time()){
+                if(!$foundChanges){
+                    $speechText .= "Dein Zug um ". $this->trainListItems[$index]->getPlannedDeparture() . " kommt heute pünktlich. ";
+                    array_push($this->delayList, ["plannedDeparture" => $this->trainListItems[$index]->getPlannedDeparture(), "delay" => null]);
+                }
             }
             $index++;
         }
@@ -125,5 +135,15 @@ class ListTrainUpdates{
             return 0;
         }
     }
+
+    /**
+     * @return array
+     */
+    public function getDelayList()
+    {
+        return $this->delayList;
+    }
+
+
 
 }

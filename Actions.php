@@ -231,38 +231,25 @@ class Actions{
                     if($row["watchedTrains"] != null){
                         $listTrainChanges = new ListTrainUpdates($row["stationId"], $this->userId);
 
-                        $uiData = [
-                            [
-                                "primaryText" => "7:15",
-                                "tertiaryText" => "+ 5 Min",
-                                "imageAlignment" => "center",
-                                "imageBlurredBackground" => true,
-                                "imageScale" => "best-fit"
-                            ],
-                            [
-                                "primaryText" => "7:24",
-                                "tertiaryText" => "+ 5 Min",
-                                "imageAlignment" => "center",
-                                "imageBlurredBackground" => true,
-                                "imageScale" => "best-fit"
-                            ],
-                            [
-                                "primaryText" => "13:15",
-                                "tertiaryText" => "+ 5 Min",
-                                "imageAlignment" => "center",
-                                "imageBlurredBackground" => true,
-                                "imageScale" => "best-fit"
-                            ],
-                            [
-                                "primaryText" => "14:15",
-                                "tertiaryText" => "+ 5 Min",
-                                "imageAlignment" => "center",
-                                "imageBlurredBackground" => true,
-                                "imageScale" => "best-fit"
-                            ]
-                        ];
+                        $out = $listTrainChanges->requestChanges();
 
-                        $builder->speechAPL($listTrainChanges->requestChanges(), $uiData);
+                        $delayList = $listTrainChanges->getDelayList();
+                        $uiItems = [];
+                        foreach ($delayList as $item){
+                            array_push($uiItems, [
+                                "primaryText" => $item["plannedDeparture"],
+                                "tertiaryText" => ($item["delay"] != 0) ? "+ " . $item["delay"] . " Min" : null,
+                                "imageAlignment" => "center",
+                                "imageBlurredBackground" => true,
+                                "imageScale" => "best-fit"
+                            ]);
+                        }
+
+                        if(count($delayList) != 0){
+                            $builder->speechAPL($out, $uiItems);
+                        } else {
+                            $builder->speechText($out);
+                        }
                     } else {
                         $builder->speechTextAndReprompt("Du hast noch keinen Zug auf deiner Liste. Möchtest du jetzt einen hinzufügen?",
                             "Möchtest du einen Zug zu deiner Liste hinzufügen?",
