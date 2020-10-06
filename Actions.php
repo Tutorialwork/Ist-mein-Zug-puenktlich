@@ -43,6 +43,11 @@ class Actions{
         $database = new Database();
 
         switch ($this->intent){
+            case "AMAZON.CancelIntent":
+            case "AMAZON.StopIntent":
+                $builder->speechText("Bis zum nächsten Mal.");
+                $this->response = $builder->getResponse();
+                break;
             case "AMAZON.YesIntent":
                 if(isset($this->sessionData["intent"])){
                     switch ($this->sessionData["intent"]){
