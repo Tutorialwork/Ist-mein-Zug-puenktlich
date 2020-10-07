@@ -17,4 +17,4 @@ Currently this skill works only in Germany with "Deutsche Bahn".
 - Then add trains where you drive often.
   - Say this to add a train: **"Alexa, starte Ist mein Zug pünktlich und füge einen Zug hinzu"**
   
-- 🎉️ Finish! Now you can ask Alexa for delays with: **"Alexa, öffne Ist mein Zug pünktlich"*
+- 🎉️ Finish! Now you can ask Alexa for delays with: **"Alexa, öffne Ist mein Zug pünktlich"**
