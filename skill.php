@@ -24,9 +24,10 @@ $type = $request["request"]["type"];
 $requestId = $request["request"]["requestId"];
 $slots = !empty($request["request"]["intent"]["slots"]) ? $request["request"]["intent"]["slots"] : null;
 $sessionDate = !empty($request["session"]["attributes"]) ? $request["session"]["attributes"] : null;
+$deviceData = !empty($request["context"]["System"]["device"]) ? $request["context"]["System"]["device"] : null;
 
 require "Actions.php";
-$action = new Actions($useridShort, $intent, $type, $requestId, $slots, $sessionDate);
+$action = new Actions($useridShort, $intent, $type, $requestId, $slots, $sessionDate, $deviceData);
 $action->process();
 
 header('Content-Type: application/json');

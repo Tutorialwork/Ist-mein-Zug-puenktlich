@@ -18,6 +18,7 @@ class Actions{
     private $response;
     private $slots;
     private $sessionData;
+    private $deviceData;
 
     /**
      * Actions constructor.
@@ -27,8 +28,9 @@ class Actions{
      * @param $requestId
      * @param $slots
      * @param $sessionData
+     * @param $deviceData
      */
-    public function __construct($userId, $intent, $requestType, $requestId, $slots, $sessionData)
+    public function __construct($userId, $intent, $requestType, $requestId, $slots, $sessionData, $deviceData)
     {
         $this->userId = $userId;
         $this->intent = $intent;
@@ -36,6 +38,7 @@ class Actions{
         $this->requestId = $requestId;
         $this->slots = $slots;
         $this->sessionData = $sessionData;
+        $this->deviceData = $deviceData;
     }
 
     public function process(){
@@ -246,7 +249,11 @@ class Actions{
                         }
 
                         if(count($delayList) != 0){
-                            $builder->speechAPL($out, $uiItems);
+                            if($this->hasAPLSupport()){
+                                $builder->speechAPL($out, $uiItems);
+                            } else {
+                                $builder->speechText($out);
+                            }
                         } else {
                             $builder->speechText($out);
                         }
@@ -293,6 +300,10 @@ class Actions{
             $index++;
         }
         return -1;
+    }
+
+    private function hasAPLSupport(){
+        return $this->deviceData["supportedInterfaces"]["Alexa.Presentation.APL"] != null;
     }
 
 }
