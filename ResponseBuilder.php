@@ -61,6 +61,23 @@ class ResponseBuilder{
         ];
     }
 
+    public function speechPermissionsCard($text, $permissions){
+        $this->response = ["version" => "1.0",
+            "response" => [
+                "outputSpeech" =>  [
+                    "type" => "SSML",
+                    "text" => "<speak>".$text."</speak>",
+                    "ssml" => "<speak>".$text."</speak>"
+                ],
+                "card" => [
+                    "type" => "AskForPermissionsConsent",
+                    "permissions" => $permissions
+                ],
+                "shouldEndSession" => true
+            ]
+        ];
+    }
+
     public function speechAPL($text, $data){
         $this->response = ["version" => "1.0",
             "response" => [
@@ -115,6 +132,13 @@ class ResponseBuilder{
         return $this->response;
     }
 
+    /**
+     * @param mixed $response
+     */
+    public function setResponse($response): void
+    {
+        $this->response = $response;
+    }
 
 
 }

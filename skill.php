@@ -1,5 +1,7 @@
 <?php
 
+// Live Endpoint: https://skills.tutorialwork.dev/skills/istmeinzugpuenktlich/skill.php
+
 $JSONRequest = file_get_contents("php://input");
 $request = json_decode($JSONRequest, TRUE);
 if(empty($request) || (!isset($request))){
@@ -25,9 +27,10 @@ $requestId = $request["request"]["requestId"];
 $slots = !empty($request["request"]["intent"]["slots"]) ? $request["request"]["intent"]["slots"] : null;
 $sessionDate = !empty($request["session"]["attributes"]) ? $request["session"]["attributes"] : null;
 $deviceData = !empty($request["context"]["System"]["device"]) ? $request["context"]["System"]["device"] : null;
+$apiAccessToken = !empty($request['context']['System']['apiAccessToken']) ? $request['context']['System']['apiAccessToken'] : null;
 
 require "Actions.php";
-$action = new Actions($useridShort, $intent, $type, $requestId, $slots, $sessionDate, $deviceData);
+$action = new Actions($useridShort, $intent, $type, $requestId, $slots, $sessionDate, $deviceData, $apiAccessToken);
 $action->process();
 
 header('Content-Type: application/json');

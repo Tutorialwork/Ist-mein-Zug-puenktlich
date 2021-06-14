@@ -5,6 +5,7 @@ require_once "ListTrainUpdates.php";
 require_once "ListStations.php";
 require_once "ListTrains.php";
 require_once "Database.php";
+require_once "AmazonReminders.php";
 
 class Actions{
 
@@ -19,6 +20,7 @@ class Actions{
     private $slots;
     private $sessionData;
     private $deviceData;
+    private $accessToken;
 
     /**
      * Actions constructor.
@@ -30,7 +32,7 @@ class Actions{
      * @param $sessionData
      * @param $deviceData
      */
-    public function __construct($userId, $intent, $requestType, $requestId, $slots, $sessionData, $deviceData)
+    public function __construct($userId, $intent, $requestType, $requestId, $slots, $sessionData, $deviceData, $accessToken)
     {
         $this->userId = $userId;
         $this->intent = $intent;
@@ -39,6 +41,7 @@ class Actions{
         $this->slots = $slots;
         $this->sessionData = $sessionData;
         $this->deviceData = $deviceData;
+        $this->accessToken = $accessToken;
     }
 
     public function process(){
@@ -94,6 +97,45 @@ class Actions{
                             "Möchtest du nochmal versuchen einen Zug zur Liste hinzuzufügen?",
                             ["intent" => "addTrain"]);
                             break;
+                        case "recurrenceQuestion":
+                            $stmt = $database->getMysql()->prepare("SELECT * FROM istmeinzugpuenktlich WHERE userId = ?");
+                            $stmt->execute([$this->userId]);
+                            $row = $stmt->fetch();
+
+                            $trainList = json_decode($row['watchedTrains']);
+                            $latestTrain = 0;
+                            $firstTrain = 99999999999999999;
+                            $nextTrainWord = "";
+
+                            foreach ($trainList as $train) {
+                                $unixTime = strtotime($train->time);
+
+                                if ($unixTime > $latestTrain) {
+                                    $latestTrain = $unixTime;
+                                }
+                                if ($unixTime < $firstTrain) {
+                                    $firstTrain = $unixTime;
+                                }
+                            }
+
+                            if ($latestTrain > time()) {
+                                $nextTrainWord = 'heute';
+                            } else {
+                                $nextTrainWord = 'morgen';
+                            }
+
+                            $builder->speechTextAndReprompt(
+                                "Möchtest du nur " . $nextTrainWord . " erinnert werden?",
+                                "Soll ich dich nur " . $nextTrainWord . " erinnern?",
+                                ["intent" => "enableNotify", "firstTrain" => $firstTrain]
+                            );
+
+                            break;
+                        case "enableNotify":
+                            $amazon = new AmazonReminders();
+                            $builder->setResponse($amazon->processRemindersRequest($this->sessionData['firstTrain'], false, $this->accessToken));
+
+                            break;
                         default:
                             /**
                              * Unexpected behavior
@@ -110,7 +152,17 @@ class Actions{
                 $this->response = $builder->getResponse();
                 break;
             case "AMAZON.NoIntent":
-                $builder->speechText("Okay");
+                switch ($this->sessionData["intent"]) {
+                    case "enableNotify":
+                        $amazon = new AmazonReminders();
+                        $builder->setResponse($amazon->processRemindersRequest($this->sessionData['firstTrain'], true, $this->accessToken));
+
+                        break;
+                    default:
+                        $builder->speechText("Okay");
+                        break;
+                }
+
                 $this->response = $builder->getResponse();
                 break;
             case "stationSearch":
@@ -255,7 +307,21 @@ class Actions{
                                 $builder->speechText($out);
                             }
                         } else {
-                            $builder->speechText($out);
+                            $reminders = new AmazonReminders();
+
+                            $hasReminder = $reminders->hasActiveReminders($this->accessToken);
+
+                            if ($hasReminder) {
+                                $builder->speechText(
+                                    $out,
+                                );
+                            } else {
+                                $builder->speechTextAndReprompt(
+                                    $out . ". Soll ich dich in Zukunft erinnern nochmal zu fragen?",
+                                    "Soll ich dich von nun an erinnern die Verpätungen abzufragen?",
+                                    ["intent" => "recurrenceQuestion"]
+                                );
+                            }
                         }
                     } else {
                         $builder->speechTextAndReprompt("Du hast noch keinen Zug auf deiner Liste. Möchtest du jetzt einen hinzufügen?",
