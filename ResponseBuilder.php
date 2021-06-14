@@ -18,6 +18,24 @@ class ResponseBuilder{
         ];
     }
 
+    public function speechTextWithCard($text){
+        $this->response = ["version" => "1.0",
+            "response" => [
+                "outputSpeech" =>  [
+                    "type" => "SSML",
+                    "text" => "<speak>".$text."</speak>",
+                    "ssml" => "<speak>".$text."</speak>"
+                ],
+                "card" => [
+                    "type" => "Simple",
+                    "title" => "Ist mein Zug pünktlich?",
+                    "content" => $text
+                ],
+                "shouldEndSession" => true
+            ]
+        ];
+    }
+
     public function speechTextAndReprompt($text, $promptText, $data){
         $this->response = ["version" => "1.0",
             "sessionAttributes" => $data,
@@ -39,7 +57,7 @@ class ResponseBuilder{
         ];
     }
 
-    public function speechCard($text, $cardTitle, $cardText, $cardImage){
+    public function speechImageCard($text, $cardTitle, $cardText, $cardImage){
         $this->response = ["version" => "1.0",
             "response" => [
                 "outputSpeech" =>  [
@@ -86,6 +104,11 @@ class ResponseBuilder{
                     "text" => "<speak>" . $text . "</speak>",
                     "ssml" => "<speak>" . $text . "</speak>"
                 ],
+                "card" => [
+                    "type" => "Simple",
+                    "title" => "Ist mein Zug pünktlich?",
+                    "content" => $text
+                ],
                 "directives" => [
                     [
                         "type" => "Alexa.Presentation.APL.RenderDocument",
@@ -108,7 +131,7 @@ class ResponseBuilder{
                                         "id" => "cheeseList",
                                         "headerTitle" => "Ist mein Zug pünktlich?",
                                         "headerBackButton" => false,
-                                        "headerAttributionImage" => "https://s3.amazonaws.com/CAPS-SSE/echo_developer/627b/349bc539fa6544deb1f7dedaff97c935/APP_ICON?versionId=vLqeklOr7wcE7A_vqRclfjqC7uZobiG5&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20201006T101035Z&X-Amz-SignedHeaders=host&X-Amz-Expires=86400&X-Amz-Credential=AKIAWBV6LQ4QHAYALYJ7%2F20201006%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=011efcad93ae8653ec0d69813950426286d6840532774ca7923f3c2035f620f3",
+                                        "headerAttributionImage" => "https://images-na.ssl-images-amazon.com/images/I/41UP4f3sPGL.png",
                                         "backgroundImageSource" => "https://i.imgur.com/X6Rjzsn.jpeg",
                                         "backgroundBlur" => false,
                                         "backgroundColorOverlay" => true,

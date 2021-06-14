@@ -13,7 +13,11 @@ class ListTrainUpdates{
      */
     private $stationId;
     private $userId;
-    private $trainIds = [];
+    /**
+     * Trains that will departure in the next 2 hours and are on the user list
+     * @var Train[]
+     */
+    private $currentTrainList = [];
     private $trainListItems = [];
     private $delayList = [];
 
@@ -31,25 +35,44 @@ class ListTrainUpdates{
         $stmt = $database->getMysql()->prepare("SELECT * FROM istmeinzugpuenktlich WHERE userId = ?");
         $stmt->execute([$this->userId]);
         $row = $stmt->fetch();
+
+        /**
+         * Train watchlist example:
+         * {
+         *   "time": "07:20",
+         *   "train": "RE10802"
+         * }
+         */
         $normalTrainList = json_decode($row["watchedTrains"]);
         sort($normalTrainList);
-        foreach ($normalTrainList as $watchedTrain){
+
+        foreach ($normalTrainList as $watchedTrain) {
+
             $timeSplit = explode(":", $watchedTrain->time);
             $list = new ListTrains($this->stationId, date("ymd"), $timeSplit[0]);
             $trainList = $list->getTrains();
-            foreach ($trainList as $train){
-                $trainHumanId = $train->getTrainType() . $train->getTrainNumber();
-                if($watchedTrain->train == $trainHumanId){
+
+            foreach ($trainList as $train) {
+
+                /*
+                 * Train is on users list
+                 */
+                if ($watchedTrain->train == $train->getTrainHumanId()) {
                     $currentHour = (int) date("H");
                     $nextHour = $currentHour + 1;
                     $trainDeparture = explode(":", $watchedTrain->time)[0];
-                    if($currentHour == $trainDeparture || $nextHour == $trainDeparture){
+
+                    /*
+                     * Train departs in next two hours
+                     */
+                    if ($currentHour == $trainDeparture || $nextHour == $trainDeparture) {
                         //Found train
-                        $trainId = $train->getTrainId();
-                        array_push($this->trainIds, $trainId);
+
+                        array_push($this->currentTrainList, $train);
                         array_push($this->trainListItems, new TrainListItem($watchedTrain->train, $watchedTrain->time));
                     }
                 }
+
             }
         }
     }
@@ -69,10 +92,10 @@ class ListTrainUpdates{
         $response = json_decode($response, true);
 
         $index = 0;
-        foreach ($this->trainIds as $trainId){
+        foreach ($this->currentTrainList as $train){
             $foundChanges = false;
             foreach($response["s"] as $item){
-                if($item[$atr]["id"] == $trainId){
+                if($item[$atr]["id"] == $train->getTrainId()){
                     if(isset($item["dp"][$atr]["ct"])){
                         $newDeparture = $item["dp"][$atr]["ct"];
                         $newDeparture = substr($newDeparture, 6, strlen($newDeparture));
@@ -84,7 +107,7 @@ class ListTrainUpdates{
                                 $delayUnit = ($delay == 1) ? "Minute" : "Minuten";
                                 $speechText .= "Dein Zug um ". $this->trainListItems[$index]->getPlannedDeparture() . " kommt heute " . $delay . " " . $delayUnit . " später. ";
                                 $foundChanges = true;
-                                array_push($this->delayList, ["plannedDeparture" => $this->trainListItems[$index]->getPlannedDeparture(), "delay" => $delay]);
+                                array_push($this->delayList, ["plannedDeparture" => $this->trainListItems[$index]->getPlannedDeparture(), "delay" => $delay, "train" => $train]);
                             }
                         }
                     } // else other change for example other station ...
@@ -95,7 +118,7 @@ class ListTrainUpdates{
             if($departureTimestamp > time()){
                 if(!$foundChanges){
                     $speechText .= "Dein Zug um ". $this->trainListItems[$index]->getPlannedDeparture() . " kommt heute pünktlich. ";
-                    array_push($this->delayList, ["plannedDeparture" => $this->trainListItems[$index]->getPlannedDeparture(), "delay" => null]);
+                    array_push($this->delayList, ["plannedDeparture" => $this->trainListItems[$index]->getPlannedDeparture(), "delay" => null, "train" => $train]);
                 }
             }
             $index++;

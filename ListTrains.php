@@ -23,20 +23,41 @@ class ListTrains{
 
             foreach($response["s"] as $item){
                 $departure = "Endstation";
+
                 if(isset($item["dp"])){
                     $departure = $item["dp"][$atr]["pt"];
                     $departure = substr($departure, 6, strlen($departure));
                     $departure = substr($departure, 0, 2) . ":" . substr($departure, 2, 4);
                 }
-                array_push($this->trains, new Train($departure, $item["tl"][$atr]["c"], $item["tl"][$atr]["n"], $item[$atr]["id"]));
+
+                $destination = null;
+
+                if (isset($item['dp'][$atr]['ppth'])) {
+                    $destinationPath = $item['dp'][$atr]['ppth'];
+
+                    $destination = explode('|', $destinationPath);
+                    $destination = $destination[count($destination) - 1];
+                }
+
+                $platform = null;
+
+                if (isset($item['dp'][$atr]['pp'])) {
+                    $platform = $item['dp'][$atr]['pp'];
+                }
+
+                array_push(
+                    $this->trains,
+                    new Train($departure, $item["tl"][$atr]["c"], $item["tl"][$atr]["n"], $item[$atr]["id"], $destination, $platform)
+                );
             }
         }
     }
 
     /**
-     * @return array
+     * Returns all trains that holds on a station in a hour.
+     * @return Train[]
      */
-    public function getTrains()
+    public function getTrains(): array
     {
         return $this->trains;
     }

@@ -293,6 +293,7 @@ class Actions{
                         foreach ($delayList as $item){
                             array_push($uiItems, [
                                 "primaryText" => $item["plannedDeparture"],
+                                "secondaryText" => "Richtung " . $item['train']->getDestination() . " auf Gleis " . $item['train']->getPlatform(),
                                 "tertiaryText" => ($item["delay"] != 0) ? "+ " . $item["delay"] . " Min" : null,
                                 "imageAlignment" => "center",
                                 "imageBlurredBackground" => true,
@@ -304,7 +305,7 @@ class Actions{
                             if($this->hasAPLSupport()){
                                 $builder->speechAPL($out, $uiItems);
                             } else {
-                                $builder->speechText($out);
+                                $builder->speechTextWithCard($out);
                             }
                         } else {
                             $reminders = new AmazonReminders();
