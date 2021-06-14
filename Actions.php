@@ -136,6 +136,15 @@ class Actions{
                             $builder->setResponse($amazon->processRemindersRequest($this->sessionData['firstTrain'], false, $this->accessToken));
 
                             break;
+                        case "stationSearchConfirm":
+                            $listStations = new ListStations('NO QUERY NEEDED');
+
+                            $station = new Station($this->sessionData['stationName'], $this->sessionData['stationId']);
+
+                            $listStations->setStationAsDefault($station, $this->userId);
+
+                            $builder->speechText($station->getName() . " ist jetzt dein Heimatbahnhof.");
+                            break;
                         default:
                             /**
                              * Unexpected behavior
@@ -158,6 +167,21 @@ class Actions{
                         $builder->setResponse($amazon->processRemindersRequest($this->sessionData['firstTrain'], true, $this->accessToken));
 
                         break;
+                    case "stationSearchConfirm":
+                        $listStations = new ListStations($this->sessionData['query']);
+
+                        $message = "Bahnhöfe die ich gefunden habe: ";
+
+                        foreach ($listStations->getStations() as $station) {
+                            $message .= $station->getName() . ", ";
+                        }
+
+                        $builder->speechTextWithDifferentCard(
+                            "Ich habe mehrere Bahnhöfe gefunden. Schau mal in die Alexa App unter Aktivitäten.",
+                            "Gefundene Bahnhöfe",
+                            $message
+                        );
+                        break;
                     default:
                         $builder->speechText("Okay");
                         break;
@@ -168,21 +192,28 @@ class Actions{
             case "stationSearch":
                 $station = new ListStations($this->slots["station"]["value"]);
 
-                if($station->getStation() != null){
-                    $userStmt = $database->getMysql()->prepare("SELECT * FROM istmeinzugpuenktlich WHERE userId = ?");
-                    $userStmt->execute([$this->userId]);
-                    if($userStmt->rowCount() == 0){
-                        $stmt = $database->getMysql()->prepare("INSERT INTO istmeinzugpuenktlich (userId, stationId) VALUES (?, ?)");
-                        $stmt->execute([$this->userId, $station->getStation()->getId()]);
+                if(count($station->getStations()) != 0){
+
+                    if (count($station->getStations()) == 1) {
+                        $targetStation = $station->getStations()[0];
+
+                        $station->setStationAsDefault($targetStation, $this->userId);
+
+                        $builder->speechText($targetStation->getName() . " ist jetzt dein Heimatbahnhof.");
                     } else {
-                        $stmt = $database->getMysql()->prepare("UPDATE istmeinzugpuenktlich SET stationId = ? WHERE userId = ?");
-                        $stmt->execute([$station->getStation()->getId(), $this->userId]);
+                        $builder->speechTextAndReprompt(
+                            "Möchtest du " . $station->getRecommendedStation()->getName() . " als Heimatbahnhof setzen?",
+                            "Möchtest du diesen Bahnhof speichern?",
+                            ['intent' => 'stationSearchConfirm', 'stationName' => $station->getRecommendedStation()->getName(), 'stationId' => $station->getRecommendedStation()->getId(), 'query' => $this->slots["station"]["value"]]
+                        );
                     }
 
-
-                    $builder->speechText($station->getStation()->getName() . " ist jetzt dein Heimatbahnhof.");
                 } else {
-                    $builder->speechText("Ich habe diesen Bahnhof leider nicht gefunden.");
+                    $builder->speechTextAndReprompt(
+                        "Ich kann diesen Bahnhof leider nicht finden. Versuche es nochmal!",
+                        "Was ist dein Heimatbahnhof?",
+                        ['intent' => 'stationSearch']
+                    );
                 }
 
                 $this->response = $builder->getResponse();

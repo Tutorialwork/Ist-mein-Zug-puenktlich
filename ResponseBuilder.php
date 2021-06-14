@@ -36,6 +36,24 @@ class ResponseBuilder{
         ];
     }
 
+    public function speechTextWithDifferentCard($text, $cardTitle, $cardText){
+        $this->response = ["version" => "1.0",
+            "response" => [
+                "outputSpeech" =>  [
+                    "type" => "SSML",
+                    "text" => "<speak>".$text."</speak>",
+                    "ssml" => "<speak>".$text."</speak>"
+                ],
+                "card" => [
+                    "type" => "Simple",
+                    "title" => $cardTitle,
+                    "content" => $cardText
+                ],
+                "shouldEndSession" => true
+            ]
+        ];
+    }
+
     public function speechTextAndReprompt($text, $promptText, $data){
         $this->response = ["version" => "1.0",
             "sessionAttributes" => $data,
