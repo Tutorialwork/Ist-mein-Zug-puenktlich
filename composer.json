@@ -1,6 +1,8 @@
 {
     "require": {
         "guzzlehttp/guzzle": "^7.0",
-      "ext-json": "*"
+      "ext-json": "*",
+      "ext-simplexml": "*",
+      "ext-pdo": "*"
     }
 }

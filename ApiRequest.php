@@ -34,7 +34,7 @@ class ApiRequest{
             $this->statusCode = $res->getStatusCode();
         
         } catch(Exception $e){
-            echo "Error: ".$e->getMessage();
+            error_log($e->getMessage());
         }
     }
 

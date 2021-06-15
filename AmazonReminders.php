@@ -55,6 +55,10 @@ class AmazonReminders {
             error_log("Error while requesting Amazon Reminders API: " . $exception->getMessage());
 
             return $exception->getCode();
+        } catch (\GuzzleHttp\Exception\BadResponseException $badResponseException) {
+            error_log("Error while requesting Amazon Reminders API: " . $badResponseException->getMessage());
+
+            return $badResponseException->getCode();
         } catch (\GuzzleHttp\Exception\GuzzleException $guzzleException) {
             error_log("Error while requesting Amazon Reminders API: " . $guzzleException->getMessage());
 
@@ -86,13 +90,13 @@ class AmazonReminders {
             return $hasReminders;
         } catch(\GuzzleHttp\Exception\ClientException $exception){
             error_log("Error while requesting Amazon Reminders API: " . $exception->getMessage());
-
-            return false;
+        } catch (\GuzzleHttp\Exception\BadResponseException $badResponseException) {
+            error_log("Error while requesting Amazon Reminders API: " . $badResponseException->getMessage());
         } catch (\GuzzleHttp\Exception\GuzzleException $guzzleException) {
             error_log("Error while requesting Amazon Reminders API: " . $guzzleException->getMessage());
-
-            return false;
         }
+
+        return false;
     }
 
     public function processRemindersRequest($departureDate, $recurrence, $accessToken): array {

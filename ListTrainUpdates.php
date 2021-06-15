@@ -124,8 +124,11 @@ class ListTrainUpdates{
             $index++;
         }
 
+        /**
+         * No train on list that departs in next 2 hours.
+         */
         if(strlen($speechText) == 0){
-            $speechText = "Es wurde kein Zug auf deiner Liste gefunden der in den nächsten 2 Stunden abfährt";
+            $speechText = "Es wurde kein Zug auf deiner Liste gefunden, der demnächst abfährt.";
         }
 
         return $speechText;
